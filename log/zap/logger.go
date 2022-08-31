@@ -288,15 +288,18 @@ func (log *Logger) clone() *Logger {
 	return &copy
 }
 
+// 核心逻辑就是检查了下Level要不要打log，顺便添加了调用栈和caller
 func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 	// Logger.check must always be called directly by a method in the
 	// Logger interface (e.g., Check, Info, Fatal).
 	// This skips Logger.check and the Info/Fatal/Check/etc. method that
 	// called it.
+	// caller的话，跳过当前这个check函数以及调用check的Error/Info/Fatal等函数
 	const callerSkipOffset = 2
 
 	// Check the level first to reduce the cost of disabled log calls.
 	// Since Panic and higher may exit, we skip the optimization for those levels.
+	// 检查level
 	if lvl < zapcore.DPanicLevel && !log.core.Enabled(lvl) {
 		return nil
 	}
@@ -310,7 +313,7 @@ func (log *Logger) check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 		Level:      lvl,
 		Message:    msg,
 	}
-	// 生成checkedEntry
+	// 生成checkedEntry，把core添加到了CheckedEntry里
 	ce := log.core.Check(ent, nil)
 	willWrite := ce != nil
 

@@ -365,6 +365,8 @@ func (enc *jsonEncoder) clone() *jsonEncoder {
 }
 
 // jsonEncoder实现方式，没有用系统的json.Marshal,自己实现了一套轻量化的的方式
+// 具体使用了拼接字符串的方式手动拼出了一个json字符串
+// 这种方式的性能比marshalJson的性能要好很多，里面的具体逻辑很简单，就是append一个key，append一个value
 func (enc *jsonEncoder) EncodeEntry(ent Entry, fields []Field) (*buffer.Buffer, error) {
 	// 生成一个buffer， jsonEncoder的底层就是一个bufferPool
 	final := enc.clone()

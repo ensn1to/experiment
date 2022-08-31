@@ -96,11 +96,13 @@ func (c *ioCore) Check(ent Entry, ce *CheckedEntry) *CheckedEntry {
 
 func (c *ioCore) Write(ent Entry, fields []Field) error {
 	// encoder entry, 以json-encoder为例
+	// 首先Encode，高性能的核心就在EncodeEntry里
 	buf, err := c.enc.EncodeEntry(ent, fields)
 	if err != nil {
 		return err
 	}
-	// 写到具体的地方
+	// 写到具体的地方，out就是sink
+	// 如果log是写到文件里的，那么调用的就是File.Write
 	_, err = c.out.Write(buf.Bytes())
 
 	// 内存回收，放回到pool
