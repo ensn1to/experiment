@@ -250,7 +250,7 @@ func (ce *CheckedEntry) Write(fields ...Field) {
 	ce.dirty = true
 
 	var err error
-	// 遍历打印到每个core，实际即掉哟哦那个Core.Write
+	// 遍历打印到每个core，实际即掉用的Core.Write
 	for i := range ce.cores {
 		err = multierr.Append(err, ce.cores[i].Write(ce.Entry, fields))
 	}

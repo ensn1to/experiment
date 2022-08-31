@@ -98,13 +98,17 @@ func RegisterSink(scheme string, factory func(*url.URL) (Sink, error)) error {
 }
 
 func newSink(rawURL string) (Sink, error) {
+	// 调用net/url的parse方法
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("can't parse %q as a URL: %v", rawURL, err)
 	}
 
 	// 如果url是类似于/var/abc.log这种的字符串，那么经过Parse后的u.Scheme就是""，然后会被赋值schemeFile
-	// 如果url是类似于http://127.0.0.1:1234这种的字符串，那么经过Parse后的u.Scheme就是"http"，不过zap本身不支持http，可以自定义一个支持http的sink
+	// 所以如果配置的是文件路径，总会走到该逻辑
+
+	// 如果url是类似于http://127.0.0.1:1234这种的字符串，那么经过Parse后的u.Scheme就是"http"
+	// 不过zap本身不支持http，可以自定义一个支持http的sink
 	if u.Scheme == "" {
 		u.Scheme = schemeFile
 	}
