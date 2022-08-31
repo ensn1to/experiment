@@ -36,6 +36,8 @@ import (
 //
 // Values configured here are per-second. See zapcore.NewSamplerWithOptions for
 // details.
+// 采样策略配置
+// 大致的逻辑是每秒超过Thereafter个相同msg的log会执行自定义的Hook函数(第二个参数为一个标志，LogDropped)
 type SamplingConfig struct {
 	Initial    int                                           `json:"initial" yaml:"initial"`
 	Thereafter int                                           `json:"thereafter" yaml:"thereafter"`
@@ -59,37 +61,56 @@ type Config struct {
 	// Level is the minimum enabled logging level. Note that this is a dynamic
 	// level, so calling Config.Level.SetLevel will atomically change the log
 	// level of all loggers descended from this config.
+	// 日志Level，因为可以动态更改，所以是atomic类型的，毕竟比锁的性能好
 	Level AtomicLevel `json:"level" yaml:"level"`
+
 	// Development puts the logger in development mode, which changes the
 	// behavior of DPanicLevel and takes stacktraces more liberally.
+	// dev模式，启用后会更改在某些使用情形下的行为，后面源码解读模块会具体看到有什么作用
 	Development bool `json:"development" yaml:"development"`
+
 	// DisableCaller stops annotating logs with the calling function's file
 	// name and line number. By default, all logs are annotated.
+	// 禁用caller，caller就是会在打的log里加一条属性，表示这条日志是在哪里打的，例如"httpd/svc.go:123"
 	DisableCaller bool `json:"disableCaller" yaml:"disableCaller"`
+
 	// DisableStacktrace completely disables automatic stacktrace capturing. By
 	// default, stacktraces are captured for WarnLevel and above logs in
 	// development and ErrorLevel and above in production.
+	// 是否要在log里加上调用栈，dev模式下只有WarnLevel模式以上有调用栈，prod模式下只有ErrorLevel以上有调用栈
 	DisableStacktrace bool `json:"disableStacktrace" yaml:"disableStacktrace"`
+
 	// Sampling sets a sampling policy. A nil SamplingConfig disables sampling.
+	// 采样策略，控制打log的速率，也可以做一些其他自定义的操作，不难理解，具体看下面的SamplingConfig
 	Sampling *SamplingConfig `json:"sampling" yaml:"sampling"`
+
 	// Encoding sets the logger's encoding. Valid values are "json" and
 	// "console", as well as any third-party encodings registered via
 	// RegisterEncoder.
+	// log encoder格式，自带的有json和console两种格式，可以通过使用RegisterEncoder来自定义log格式
 	Encoding string `json:"encoding" yaml:"encoding"`
+
 	// EncoderConfig sets options for the chosen encoder. See
 	// zapcore.EncoderConfig for details.
+	// log格式具体配置，详细看下面的EncoderConfig
 	EncoderConfig zapcore.EncoderConfig `json:"encoderConfig" yaml:"encoderConfig"`
+
 	// OutputPaths is a list of URLs or file paths to write logging output to.
 	// See Open for details.
+	// log输出路径，看结构表示可以有多个输出路径
 	OutputPaths []string `json:"outputPaths" yaml:"outputPaths"`
+
 	// ErrorOutputPaths is a list of URLs to write internal logger errors to.
 	// The default is standard error.
 	//
 	// Note that this setting only affects internal errors; for sample code that
 	// sends error-level logs to a different location from info- and debug-level
 	// logs, see the package-level AdvancedConfiguration example.
+	// 内部错误输出路径，默认是stderr
 	ErrorOutputPaths []string `json:"errorOutputPaths" yaml:"errorOutputPaths"`
+
 	// InitialFields is a collection of fields to add to the root logger.
+	// 初始化字段，每条log都会加上InitialFields里的内容
 	InitialFields map[string]interface{} `json:"initialFields" yaml:"initialFields"`
 }
 

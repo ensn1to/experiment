@@ -31,6 +31,7 @@ const (
 	_countersPerLevel = 4096
 )
 
+// 用来记录日志打了多少条
 type counter struct {
 	resetAt atomic.Int64
 	counter atomic.Uint64
@@ -42,8 +43,14 @@ func newCounters() *counters {
 	return &counters{}
 }
 
+// 这里可能会出现意想不到的情况
+// 因为_countersPerLevel写死了是4096，那么必然会存在不同的key做完hash后取模会路由到相同的counter里
+// 那么就会有概率丢弃掉没有达到丢弃阈值的log
+// 假设abc和def的hash值一样，first是0，thereafter是10，表示每秒钟每种log每10条才会记录1次，那么abc和def这两种log就会共享同一个counter，这就是问题所在
 func (cs *counters) get(lvl Level, key string) *counter {
 	i := lvl - _minLevel
+	// fnv32a是一个hash函数
+	// _countersPerLevel固定是4096
 	j := fnv32a(key) % _countersPerLevel
 	return &cs[i][j]
 }
@@ -166,11 +173,13 @@ func NewSamplerWithOptions(core Core, tick time.Duration, first, thereafter int,
 	return s
 }
 
+// 这里可以看到sampler就是Core外面包了一层Wrapper
 type sampler struct {
 	Core
 
-	counts            *counters
-	tick              time.Duration
+	counts *counters
+	tick   time.Duration // 这里的tick在初始化Logger的时候已经写死了是time.Second，也就是1秒
+
 	first, thereafter uint64
 	hook              func(Entry, SamplingDecision)
 }
@@ -212,14 +221,19 @@ func (s *sampler) With(fields []Field) Core {
 	}
 }
 
+// 所有的Core.Check都会先走sampler.Check，然后再走Core.Check
 func (s *sampler) Check(ent Entry, ce *CheckedEntry) *CheckedEntry {
 	if !s.Enabled(ent.Level) {
 		return ce
 	}
 
 	if ent.Level >= _minLevel && ent.Level <= _maxLevel {
+		// 根据Message获取counter，也就是这个Message打过几次日志了
 		counter := s.counts.get(ent.Level, ent.Message)
+		// 打一条Message就会记录一次到counters里，不过每秒会重置一次counter，具体看IncCheckReset里的逻辑
 		n := counter.IncCheckReset(ent.Time, s.tick)
+		// first表示最初的first条日志调用hook时第二个参数传LogSampled，超过first的日志，每threrafter条日志第二个参数传LogSampled，否则传LogDropped
+		// 假设first是100，thereafter是50，表示同一个Message的log，最初的100条全都会记录，之后的log在每秒钟内，每50条记录一次
 		if n > s.first && (s.thereafter == 0 || (n-s.first)%s.thereafter != 0) {
 			s.hook(ent, LogDropped)
 			return ce

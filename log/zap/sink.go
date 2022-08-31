@@ -47,6 +47,8 @@ func resetSinkRegistry() {
 	_sinkMutex.Lock()
 	defer _sinkMutex.Unlock()
 
+	// 这里也是plugin式写法
+	// 可以通过RegisterSink来自定义sink，比如自定义一个支持http协议的sink
 	_sinkFactories = map[string]func(*url.URL) (Sink, error){
 		schemeFile: newFileSink,
 	}
@@ -100,6 +102,9 @@ func newSink(rawURL string) (Sink, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't parse %q as a URL: %v", rawURL, err)
 	}
+
+	// 如果url是类似于/var/abc.log这种的字符串，那么经过Parse后的u.Scheme就是""，然后会被赋值schemeFile
+	// 如果url是类似于http://127.0.0.1:1234这种的字符串，那么经过Parse后的u.Scheme就是"http"，不过zap本身不支持http，可以自定义一个支持http的sink
 	if u.Scheme == "" {
 		u.Scheme = schemeFile
 	}
@@ -113,6 +118,7 @@ func newSink(rawURL string) (Sink, error) {
 	return factory(u)
 }
 
+// 这里的sink实际上就是一个*File
 func newFileSink(u *url.URL) (Sink, error) {
 	if u.User != nil {
 		return nil, fmt.Errorf("user and password not allowed with file URLs: got %v", u)
@@ -136,7 +142,7 @@ func newFileSink(u *url.URL) (Sink, error) {
 	case "stderr":
 		return nopCloserSink{os.Stderr}, nil
 	}
-	return os.OpenFile(u.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	return os.OpenFile(u.Path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0o666)
 }
 
 func normalizeScheme(s string) (string, error) {

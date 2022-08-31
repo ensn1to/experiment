@@ -96,8 +96,9 @@ func newJSONEncoder(cfg EncoderConfig, spaced bool) *jsonEncoder {
 
 	return &jsonEncoder{
 		EncoderConfig: &cfg,
-		buf:           bufferpool.Get(),
-		spaced:        spaced,
+		// 这个buf是高性能的关键之一，使用了简化的bytesBuffer和sync.Pool
+		buf:    bufferpool.Get(),
+		spaced: spaced,
 	}
 }
 

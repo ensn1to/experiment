@@ -328,6 +328,7 @@ type EncoderConfig struct {
 	// Configure the primitive representations of common complex types. For
 	// example, some users may want all time.Times serialized as floating-point
 	// seconds since epoch, while others may prefer ISO8601 strings.
+	// 自定义一些属性的格式，例如指定Time字段格式化为2022-05-23 16:16:16
 	EncodeLevel    LevelEncoder    `json:"levelEncoder" yaml:"levelEncoder"`
 	EncodeTime     TimeEncoder     `json:"timeEncoder" yaml:"timeEncoder"`
 	EncodeDuration DurationEncoder `json:"durationEncoder" yaml:"durationEncoder"`
@@ -337,9 +338,11 @@ type EncoderConfig struct {
 	EncodeName NameEncoder `json:"nameEncoder" yaml:"nameEncoder"`
 	// Configure the encoder for interface{} type objects.
 	// If not provided, objects are encoded using json.Encoder
+	// 用于interface类型的encoder，可以自定义，默认为jsonEncoder
 	NewReflectedEncoder func(io.Writer) ReflectedEncoder `json:"-" yaml:"-"`
 	// Configures the field separator used by the console encoder. Defaults
 	// to tab.
+	// console格式的分隔符，默认是tab
 	ConsoleSeparator string `json:"consoleSeparator" yaml:"consoleSeparator"`
 }
 

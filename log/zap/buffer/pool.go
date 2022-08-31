@@ -40,7 +40,7 @@ func NewPool() Pool {
 func (p Pool) Get() *Buffer {
 	buf := p.p.Get().(*Buffer)
 	buf.Reset()
-	buf.pool = p
+	buf.pool = p // 这里赋值pool为当前Pool，用于使用完Buffer后把Buffer后放回pool里，也就是下面的put函数
 	return buf
 }
 
