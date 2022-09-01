@@ -1,0 +1,2 @@
+{"level":"info","ts":"2022-09-01T10:01:13","caller":"log/log.go:90","msg":"default","key":"value","count":4}
+{"level":"info","ts":"2022-09-01T10:02:49","caller":"log/log.go:90","msg":"default","key":"value","count":4}

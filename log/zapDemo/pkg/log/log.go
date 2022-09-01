@@ -59,6 +59,26 @@ func New(writer io.Writer, level Level, opts ...Option) *Logger {
 	}
 }
 
+func NewProduction(outputPaths []string, opts ...Option) *Logger {
+	cfg := zap.NewProductionConfig()
+	// 自定义encoder
+	cfg.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(t.Format("2006-01-02T15:04:05"))
+	}
+	if len(outputPaths) > 0 {
+		cfg.OutputPaths = outputPaths
+	}
+
+	logger, err := cfg.Build(opts...)
+	if err != nil {
+		panic(err)
+	}
+
+	return &Logger{
+		l: logger,
+	}
+}
+
 func (l *Logger) Debug(msg string, fields ...Field) {
 	l.l.Debug(msg, fields...)
 }
