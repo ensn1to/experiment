@@ -1,6 +1,6 @@
 package demo
 
-import "zapDemo/pkg/log"
+import "github.com/ensn1to/experiment/tree/master/log/elog/pkg/log"
 
 // 日志写到文件，并发送到http服务
 func Demo5() {

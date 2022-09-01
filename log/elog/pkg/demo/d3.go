@@ -3,7 +3,7 @@ package demo
 import (
 	"os"
 
-	"zapDemo/pkg/log"
+	"github.com/ensn1to/experiment/tree/master/log/elog/pkg/log"
 )
 
 // 写入多个文件

@@ -1,4 +1,4 @@
-module zapDemo
+module github.com/ensn1to/experiment/tree/master/log/elog
 
 go 1.19
 

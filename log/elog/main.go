@@ -1,6 +1,6 @@
 package main
 
-import "zapDemo/pkg/demo"
+import "github.com/ensn1to/experiment/tree/master/log/elog/pkg/demo"
 
 func main() {
 	// demo.Demo1()

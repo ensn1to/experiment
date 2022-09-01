@@ -1,6 +1,6 @@
 package demo
 
-import "zapDemo/pkg/log"
+import "github.com/ensn1to/experiment/tree/master/log/elog/pkg/log"
 
 // 日志分片
 func Demo4() {

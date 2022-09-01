@@ -10,8 +10,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"zapDemo/pkg/httpc"
-
+	"github.com/ensn1to/experiment/tree/master/log/elog/pkg/httpc"
 	"go.uber.org/zap"
 )
 
