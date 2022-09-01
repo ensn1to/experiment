@@ -36,6 +36,8 @@ func Demo6() {
 	logger := log.NewTee(tops)
 	log.ResetDefault(logger)
 
-	log.Info("demo6:", log.String("app", "start ok"),
-		log.Int("major version", 3))
+	for i := 0; i < 200; i++ {
+		log.Info("demo4:", log.String("app", "start ok"),
+			log.Int("major version", i))
+	}
 }
