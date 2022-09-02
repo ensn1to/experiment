@@ -1,0 +1,71 @@
+version: '3.7'
+services:
+  elasticsearch:
+    image: elasticsearch:7.6.2
+    container_name: elasticsearch
+    privileged: true
+    user: root
+    environment:
+      #设置集群名称为elasticsearch
+      - cluster.name=elasticsearch 
+      #以单一节点模式启动
+      - discovery.type=single-node 
+      #设置使用jvm内存大小
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m 
+    volumes:
+      - ./elasticsearch/plugins:/usr/share/elasticsearch/plugins
+      - ./elasticsearch/data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+
+  logstash:
+    image: logstash:7.6.2
+    container_name: logstash
+    ports:
+       - 4560:4560
+    privileged: true
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      #挂载logstash的配置文件
+      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf 
+    depends_on:
+      - elasticsearch 
+    links:
+      #可以用es这个域名访问elasticsearch服务
+      - elasticsearch:es 
+      - redis:redis
+    
+
+  kibana:
+    image: kibana:7.6.2
+    container_name: kibana
+    ports:
+        - 5601:5601
+    privileged: true
+    links:
+      #可以用es这个域名访问elasticsearch服务
+      - elasticsearch:es 
+    depends_on:
+      - elasticsearch 
+    environment:
+      #设置访问elasticsearch的地址
+      - elasticsearch.hosts=http://es:9200 
+
+  redis:
+     image: redis:latest
+     restart: "no"
+     container_name: redis
+     ports:
+       - "6379:6379"
+     volumes:
+       - ./redis/redis.conf:/etc/redis/redis.conf 
+       - ./redis/data:/data      
+     command: redis-server /etc/redis/redis.conf 
+     privileged: true
+   
+networks:
+  default:
+    external:
+      name: elk_default
