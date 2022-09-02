@@ -32,7 +32,7 @@ type Option = zap.Option
 
 type Logger struct {
 	l     *zap.Logger
-	level Level // log level
+	level zap.AtomicLevel // log 动态日志level
 }
 
 // new logger. self-defined logger instead of std
@@ -41,21 +41,24 @@ func New(writer io.Writer, level Level, opts ...Option) *Logger {
 		panic("the writer is nil")
 	}
 
+	// zapcore.Level转成atomicLevel
+	atomicLevel := zap.NewAtomicLevelAt(level)
+
 	cfg := zap.NewProductionConfig()
 	// 自定义encoder
 	cfg.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		enc.AppendString(t.Format("2006-01-02T15:04:05"))
+		enc.AppendString(t.Format(time.RFC3339))
 	}
 
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(cfg.EncoderConfig),
 		zapcore.AddSync(writer),
-		zapcore.Level(level),
+		atomicLevel,
 	)
 
 	return &Logger{
 		l:     zap.New(core, opts...),
-		level: level,
+		level: atomicLevel,
 	}
 }
 
@@ -109,6 +112,13 @@ func (l *Logger) Fatal(msg string, fields ...Field) {
 
 func (l *Logger) Sync() error {
 	return l.l.Sync()
+}
+
+// SetLevel alters the logging level on runtime
+// it is concurrent-safe
+func (l *Logger) SetLevel(level Level) error {
+	l.level.SetLevel(level)
+	return nil
 }
 
 func Sync() error {
