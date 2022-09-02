@@ -11,7 +11,17 @@
 chmod -R 777 lasticsearch/data
 ```
 
-3. 启动
+3. 创建网络（bridge方式）
+```
+docker create network  elk_default
+```
+
+4. 启动
 ```
 docker-compose up -d
+```
+
+5. 关闭
+```
+docker-compose down -v
 ```
