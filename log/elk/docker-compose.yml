@@ -1,10 +1,10 @@
 version: '3.7'
 services:
   elasticsearch:
-    image: elasticsearch:7.6.2
+    image: elasticsearch:${ES_VERSION}
     container_name: elasticsearch
     privileged: true
-    user: root
+    user: ${ES_USER}
     environment:
       #设置集群名称为elasticsearch
       - cluster.name=elasticsearch 
@@ -20,7 +20,7 @@ services:
       - 9300:9300
 
   logstash:
-    image: logstash:7.6.2
+    image: logstash:${ES_VERSION}
     container_name: logstash
     ports:
        - 4560:4560
@@ -32,6 +32,7 @@ services:
       - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf 
     depends_on:
       - elasticsearch 
+      - redis
     links:
       #可以用es这个域名访问elasticsearch服务
       - elasticsearch:es 
@@ -39,7 +40,7 @@ services:
     
 
   kibana:
-    image: kibana:7.6.2
+    image: kibana:${ES_VERSION}
     container_name: kibana
     ports:
         - 5601:5601
