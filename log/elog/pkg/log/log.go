@@ -90,6 +90,10 @@ func (l *Logger) Info(msg string, fields ...Field) {
 	l.l.Info(msg, fields...)
 }
 
+func (l *Logger) Infof(msg string, keysAndValues ...interface{}) {
+	l.l.Sugar().Infof(msg, keysAndValues...)
+}
+
 func (l *Logger) Warn(msg string, fields ...Field) {
 	l.l.Warn(msg, fields...)
 }
