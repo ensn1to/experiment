@@ -93,7 +93,7 @@ func (c *channelManager) startNotifyCancleOrClosed() {
 
 func (c *channelManager) reconnectLoop() {
 	for {
-		fmt.Print("waiting %s seconds to attempt to reconnect to amqp server", c.reconnectInterval)
+		fmt.Printf("waiting %s seconds to attempt to reconnect to amqp server", c.reconnectInterval)
 		time.Sleep(c.reconnectInterval)
 		if err := c.reconnect(); err != nil {
 			fmt.Printf("error reconnecting to amqp server: %s", err.Error())

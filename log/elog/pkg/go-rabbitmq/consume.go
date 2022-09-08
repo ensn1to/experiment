@@ -211,17 +211,17 @@ func handlerMsg(msgs <-chan amqp.Delivery, consumeOptions *ConsumeOptions, handl
 		switch handler(Delivery{msg}) {
 		case Ack:
 			if err := msg.Ack(false); err != nil {
-				fmt.Errorf("cann't ack message: %s", err.Error())
+				fmt.Printf("cann't ack message: %s", err.Error())
 			}
 		case NackDiscard:
 			err := msg.Nack(false, false)
 			if err != nil {
-				fmt.Errorf("can't nack message: %v", err)
+				fmt.Printf("can't nack message: %v", err)
 			}
 		case NackRequeue:
 			err := msg.Nack(false, true)
 			if err != nil {
-				fmt.Errorf("can't nack message: %v", err)
+				fmt.Printf("can't nack message: %v", err)
 			}
 		}
 
