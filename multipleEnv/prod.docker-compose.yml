@@ -1,0 +1,6 @@
+version: '3.8'
+services:
+  server:
+    environment:
+      - SERVER_MODE="prod"
+      - CONSUL_ADDR=":8501"
