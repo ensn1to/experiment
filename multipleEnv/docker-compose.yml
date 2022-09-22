@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  server:
+    image: viper_test
+    container_name: viper_test
+    environment:
+      - SERVER_MODE="dev"
+      - CONSUL_ADDR=":8500"
+    build:
+      context: .
+      dockerfile: Dockerfile
