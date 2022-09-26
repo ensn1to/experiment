@@ -1,0 +1,22 @@
+[providers.docker]
+    endpoint = "unix:///var/run/docker.sock"
+
+[log]
+    filePath = "/home/ubuntu/log/traefik/log-file.log"
+    format = "json"
+
+[accessLog]
+    filePath = "/home/ubuntu/log/traefik/access.log"
+    format = "json"
+
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+
+  [entryPoints.web-secure]
+    address = ":443"
+
+[metrics.prometheus]
+  buckets = [0.1,0.3,1.2,5.0]
+  entryPoint = "metrics"
+
