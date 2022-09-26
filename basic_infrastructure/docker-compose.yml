@@ -1,0 +1,62 @@
+version: '3'
+services:
+    mysql:
+        environment:
+            MYSQL_ROOT_PASSWORD: "dev_model_root"
+        image: "mysql:latest"
+        restart: always
+        volumes:
+            - "./db/data:/var/lib/mysql"
+            - "./db/my.cnf:/etc/my.cnf"
+            - "./db/init:/docker-entrypoint-initdb.d/"
+        ports:
+            - "3306:3306"
+        labels:
+            - "traefik.http.routers.db.rule=Host(`db.local`)"
+
+
+    minio:
+        image: "minio/minio:latest"
+        hostname: "minio"
+        ports:
+            - 9000:9000
+        environment:
+           MINIO_ACCESS_KEY: admin
+           MINIO_SECRET_KEY: admin123
+        volumes:
+           - "./minio/data:/data"
+           - "./minio/config:/root/.minio/"
+        command: server data
+        restart: always
+        labels:
+            - "traefik.http.routers.minio.rule=Host(`minio.local`)" 
+
+    rabbit:
+        image: rabbitmq:management
+        hostname: rabbit
+        container_name: "rabbitmq"
+        restart: always
+        ports:
+            - "5672:5672"
+            - "5673:15672"
+        environment:
+            - RABBITMQ_DEFAULT_USER=dm
+            - RABBITMQ_DEFAULT_PASS=dm
+        volumes:
+            - ./rabbitmq:/var/lib/rabbitmq
+        labels:
+            - "traefik.http.routers.rabbit.rule=Host(`rabbit.local`)"
+
+    consul:
+        container_name: consul
+        image: consul:latest
+        ports:
+        - 8500:8500
+        command: ["consul","agent","-server","-bootstrap","-data-dir","/consul","-ui","-bind","127.0.0.1","-client","0.0.0.0"]
+        labels:
+            - "traefik.http.routers.minio.rule=Host(`consul.local`)" 
+
+networks:
+  default:
+    external:
+      name: traefik_default
