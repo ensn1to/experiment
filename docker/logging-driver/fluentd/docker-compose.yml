@@ -1,0 +1,40 @@
+version: '3.7'
+
+# 用法：https://stackoverflow.com/questions/38567355/docker-compose-global-level-logging
+# 全局有效
+x-logging:
+  &default-logging
+  driver: fluentd
+  options:
+    fluentd-address: localhost:24224
+    fluentd-async-connect: 'true' # fluentd-async-connect 异步日志 这个表示 fluentd挂了，docker服务仍然照常
+    mode: non-blocking
+    max-buffer-size: 4m
+    tag: "test-{{.Name}}"  #配置容器的tag,test为前缀,容器名称为后缀,docker-compose会给容器添加副本后缀,如 fluentd_1
+
+services:
+  web:
+    image: httpd
+    ports: 
+      - 8080:80
+    depends_on:
+     - fluentd
+    logging: *default-logging
+  
+  fluentd:
+   image: fluent/fluentd:v1.3.2
+   ports:
+    - 24224:24224
+   volumes:
+    - ./:/fluentd/etc
+    - ./log:/var/log/fluentd
+   environment:
+    - FLUENTD_CONF=fluentd.conf
+
+  fluentd-worker:
+   image: fluent/fluentd:v1.3.2
+   depends_on:
+     - fluentd
+   logging: *default-logging
+
+  
