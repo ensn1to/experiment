@@ -7,15 +7,9 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/chunk", chunkHandle)
-	http.HandleFunc("/", connHandler)
+	http.HandleFunc("/", chunkHandle)
 
 	fmt.Println(http.ListenAndServe(":18080", nil))
-}
-
-func connHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Connection", "keep-alive")
-	w.Write([]byte("connect back"))
 }
 
 func chunkHandle(w http.ResponseWriter, r *http.Request) {
