@@ -63,14 +63,30 @@ func (s *Service) Start() error {
 	return nil
 }
 
+// Stop stop the service.
+func (s *Service) Stop() {
+	s.ln.Close()
+}
+
 // ServeHTTP simple router
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// key means operations on data resource
 	if strings.HasPrefix(r.URL.Path, "/key") {
 		// todo
 	} else if r.URL.Path == "/join" {
-		// todo
+		s.joinRequestHandler(w, r)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 	}
+}
+
+// 301 redirect
+func (s *Service) FormRedirect(r *http.Request, host string) string {
+	protocol := "http"
+	rq := r.URL.RawQuery
+	if rq != "" {
+		rq = fmt.Sprintf("?%s", rq)
+	}
+
+	return fmt.Sprintf("%s://%s%s%s", protocol, host, r.URL.Path, rq)
 }

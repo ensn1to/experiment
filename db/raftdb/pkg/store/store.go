@@ -108,6 +108,10 @@ func (s *Store) GetMeta(key string) (string, error) {
 	return s.Get(key, Stale)
 }
 
+func (s *Store) DeleteMeta(key string) error {
+	return s.Delete(key)
+}
+
 func (s *Store) LeaderAPIAddr() string {
 	id, err := s.LeaderID()
 	if err != nil {
@@ -144,6 +148,22 @@ func (s *Store) Set(key, value string) error {
 	}
 
 	// log copy
+	return s.raft.Apply(b, raftTimeout).Error()
+}
+
+func (s *Store) Delete(key string) error {
+	// only leader can write
+	if s.raft.State() != raft.Leader {
+		return raft.ErrNotLeader
+	}
+
+	i := item{Op: "delete", Key: key}
+
+	b, err := json.Marshal(i)
+	if err != nil {
+		return err
+	}
+
 	return s.raft.Apply(b, raftTimeout).Error()
 }
 
