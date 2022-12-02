@@ -6,11 +6,13 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/ensn1to/experiment/tree/master/db/raftdb/pkg/store"
 )
 
 type Store interface {
 	// data operations
-	Get(key string) (string, error)
+	Get(key string, lvl store.ConsistencyLevel) (string, error)
 
 	Set(key string, value string) error
 
@@ -89,4 +91,20 @@ func (s *Service) FormRedirect(r *http.Request, host string) string {
 	}
 
 	return fmt.Sprintf("%s://%s%s%s", protocol, host, r.URL.Path, rq)
+}
+
+func level(req *http.Request) (store.ConsistencyLevel, error) {
+	q := req.URL.Query()
+	lvl := strings.TrimSpace(q.Get("level"))
+
+	switch strings.ToLower(lvl) {
+	case "default":
+		return store.Default, nil
+	case "stale":
+		return store.Stale, nil
+	case "consistent":
+		return store.Consistent, nil
+	default:
+		return store.Default, nil
+	}
 }
