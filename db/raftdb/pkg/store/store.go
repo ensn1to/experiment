@@ -3,6 +3,9 @@ package store
 import (
 	"encoding/json"
 	"fmt"
+	"net"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -43,6 +46,32 @@ func New() *Store {
 		m: make(map[string]string),
 		// Todo:logger
 	}
+}
+
+func (s *Store) Open(enableSingle bool, localID string) error {
+	config := raft.DefaultConfig()
+	config.LocalID = raft.ServerID(localID)
+
+	p := filepath.Join(s.RaftDir, "raft.db")
+	pathNotExits := func(path string) bool {
+		if _, err := os.Lstat(p); err != nil && os.IsNotExist(err) {
+			return false
+		}
+		return true
+	}(p)
+
+	_ = !pathNotExits
+	addr, err := net.ResolveTCPAddr("tcp", s.RaftBind)
+	if err != nil {
+		return err
+	}
+
+	_, err = raft.NewTCPTransport(s.RaftBind, addr, 3, 10*time.Second, os.Stderr)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Store) LeaderID() (string, error) {
@@ -174,6 +203,7 @@ func (s *Store) Get(key string, lvl ConsistencyLevel) (string, error) {
 		}
 	}
 
+	// 强一致读操作需要走leader
 	if lvl == Consistent {
 		if err := s.consistentRead(); err != nil {
 			return "", err

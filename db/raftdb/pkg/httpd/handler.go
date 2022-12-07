@@ -47,7 +47,6 @@ func (s *Service) get(r *http.Request, w http.ResponseWriter) {
 		return
 	}
 
-	// 强一致读操作需要走leader
 	v, err := s.store.Get(k, lvl)
 	if err != nil {
 		// 容错：在去leader读一遍
