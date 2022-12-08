@@ -8,6 +8,11 @@ import (
 type Pool struct {
 	capacity int // the size of pool
 
+	// 当pool满的情况下，新的Schedule调用是否阻塞当前goroutine。默认值：true
+	block bool
+
+	preAlloc bool // 是否在创建pool的时候，就预创建workers，默认值为：false
+
 	active chan struct{} // 当前pool可用worker available worker in pool
 	tasks  chan Task     // 待执行task task to execute
 
@@ -22,7 +27,7 @@ const (
 	maxCapacity     = 30
 )
 
-func New(capacity int) *Pool {
+func New(capacity int, opts ...Option) *Pool {
 	// 防御性校验
 	if capacity <= 0 {
 		capacity = defaultCapacity
@@ -33,11 +38,23 @@ func New(capacity int) *Pool {
 
 	p := &Pool{
 		capacity: capacity,
+		block:    true,
 		tasks:    make(chan Task),
 		quit:     make(chan struct{}),
 		active:   make(chan struct{}, capacity),
 	}
 
+	for _, opt := range opts {
+		opt(p)
+	}
+
+	// create all workers
+	if p.preAlloc {
+		for i := 0; i < p.capacity; i++ {
+			p.newWorker(i + 1)
+			p.active <- struct{}{}
+		}
+	}
 	fmt.Println("gopool start")
 
 	go p.run()
@@ -45,8 +62,36 @@ func New(capacity int) *Pool {
 	return p
 }
 
+func (p *Pool) returnTask(t Task) {
+	go func() {
+		p.tasks <- t
+	}()
+}
+
 func (p *Pool) run() {
-	idx := 0
+	// 当前pool中active worker
+	idx := len(p.active)
+
+	// 根据实际tasks channel中的情况创建worker
+	// 如果直接执行下面的for{}，满足的是preAlloc设置，即active pool 一直为满
+	if !p.preAlloc {
+	loop:
+		for t := range p.tasks {
+			// 调度循环，目的为了下面的worker创建
+			p.returnTask(t)
+			select {
+			case <-p.quit:
+				return
+			case p.active <- struct{}{}:
+				idx++
+				p.newWorker(idx)
+			default:
+				// active pool满，结束loop
+				break loop
+			}
+		}
+	}
+
 	for {
 		select {
 		case <-p.quit:
@@ -98,6 +143,17 @@ func (p *Pool) Schedule(task Task) error {
 			return ErrPoolFreed
 		case p.tasks <- task:
 			return nil
+		default: // 防止阻塞
+			if p.block {
+				p.tasks <- task
+				return nil
+			}
+			return ErrNoIdleWokerInPool
 		}
 	}
+}
+
+func (p *Pool) Free() {
+	close(p.quit) // make sure all workers are closed
+	p.wg.Wait()
 }
