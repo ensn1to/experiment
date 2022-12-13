@@ -2,7 +2,6 @@ package gopool
 
 import (
 	"context"
-	"runtime"
 	"sync"
 	"sync/atomic"
 )
@@ -47,7 +46,10 @@ type pool struct {
 	cnt uint32 // create index
 	cap int32  // capacity of the pool
 
-	taskLists []taskList
+	// 多链表改为单链表
+	taskHead  *task
+	taskTail  *task
+	taskLock  sync.Mutex
 	taskCount int32
 
 	workerCount int32 // number of workers running
@@ -59,10 +61,9 @@ type pool struct {
 
 func NewPool(name string, cap int32, cfg *Config) *pool {
 	p := &pool{
-		name:      name,
-		cap:       cap,
-		cfg:       cfg,
-		taskLists: make([]taskList, runtime.GOMAXPROCS(0)),
+		name: name,
+		cap:  cap,
+		cfg:  cfg,
 	}
 
 	return p
@@ -85,17 +86,16 @@ func (p *pool) CtxGo(ctx context.Context, f func()) {
 	t.ctx = ctx
 	t.f = f
 
-	idx := int(atomic.AddUint32(&p.cnt, 1)) % len(p.taskLists)
-	p.taskLists[idx].Lock()
+	p.taskLock.Lock()
 	// add task to the tasklist's head
-	if p.taskLists[idx].taskHead == nil {
-		p.taskLists[idx].taskHead = t
-		p.taskLists[idx].taskTail = t
+	if p.taskHead == nil {
+		p.taskHead = t
+		p.taskTail = t
 	} else {
-		p.taskLists[idx].taskTail.next = t
-		p.taskLists[idx].taskTail = t
+		p.taskTail.next = t
+		p.taskTail = t
 	}
-	p.taskLists[idx].Unlock()
+	p.taskLock.Unlock()
 	atomic.AddInt32(&p.taskCount, 1)
 
 	if (atomic.LoadInt32(&p.taskCount) >= p.cfg.ScaleThreshold) &&
