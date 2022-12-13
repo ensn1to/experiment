@@ -6,6 +6,18 @@ import (
 	"sync/atomic"
 )
 
+type Pool interface {
+	Name() string
+	SetCap(cap int32)
+
+	Go(func())
+	CtxGo(ctx context.Context, f func())
+
+	SetPanicHandler(f func(context.Context, any))
+
+	WorkerCount() int32
+}
+
 var taskPool sync.Pool
 
 func init() {
@@ -34,12 +46,6 @@ func (t *task) Recycle() {
 }
 func newTask() any { return &task{} }
 
-type taskList struct {
-	sync.Mutex
-	taskHead *task
-	taskTail *task
-}
-
 type pool struct {
 	name string
 
@@ -59,7 +65,7 @@ type pool struct {
 	panicHandler func(context.Context, any)
 }
 
-func NewPool(name string, cap int32, cfg *Config) *pool {
+func NewPool(name string, cap int32, cfg *Config) Pool {
 	p := &pool{
 		name: name,
 		cap:  cap,
