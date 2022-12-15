@@ -62,6 +62,10 @@ func New(capacity int, opts ...Option) *Pool {
 	return p
 }
 
+func (p *Pool) Cap() int {
+	return p.capacity
+}
+
 func (p *Pool) returnTask(t Task) {
 	go func() {
 		p.tasks <- t
