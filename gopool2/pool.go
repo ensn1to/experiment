@@ -8,7 +8,7 @@ import (
 
 type Pool interface {
 	Name() string
-	SetCap(cap int32)
+	ChangeCap(cap int32)
 
 	Go(func())
 	CtxGo(ctx context.Context, f func())
@@ -79,7 +79,7 @@ func (p *pool) Name() string {
 	return p.name
 }
 
-func (p *pool) SetCap(cap int32) {
+func (p *pool) ChangeCap(cap int32) {
 	atomic.StoreInt32(&p.cap, cap)
 }
 

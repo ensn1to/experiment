@@ -26,7 +26,7 @@ func CtxGo(ctx context.Context, f func()) {
 // SetCap is not recommended to be called,
 // this func changes the global pool's capacity which will affect other callers.
 func SetCap(cap int32) {
-	defaultPool.SetCap(cap)
+	defaultPool.ChangeCap(cap)
 }
 
 func SetPanicHandler(f func(context.Context, any)) {
